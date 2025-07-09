@@ -5,13 +5,13 @@ const Home = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [convert, setConvert] = useState("");
   const [download, setDownload] = useState("");
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
-    setConvert(""); 
-    setDownload(""); 
+    setConvert("");
+    setDownload("");
   };
 
   const handleSubmit = async (event) => {
@@ -26,8 +26,10 @@ const Home = () => {
     formData.append("file", selectedFile);
 
     try {
-      setLoading(true); 
-      const response = await axios.post("http://localhost:3000/convertFile", formData, {
+      setLoading(true);
+      const API = import.meta.env.VITE_API_URL;
+
+      const response = await axios.post(`${API}/convertFile`, formData, {
         responseType: "blob",
       });
 
@@ -39,18 +41,18 @@ const Home = () => {
       link.setAttribute("download", downloadName);
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link);
+      link.remove();
 
       fileInputRef.current.value = null;
       setSelectedFile(null);
-      setConvert("File converted successfully!");
-      setDownload(`Download started: ${downloadName}`);
+      setConvert("✅ File converted successfully!");
+      setDownload(`📥 Download started: ${downloadName}`);
     } catch (error) {
       console.error("Error converting file:", error);
-      setConvert("Something went wrong during conversion.");
+      setConvert("❌ Something went wrong during conversion.");
       setDownload("");
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -84,10 +86,8 @@ const Home = () => {
             {loading ? "Converting..." : "Convert File"}
           </button>
 
-         
           {loading && <div className="spinner"></div>}
 
-          {/* Conversion & download messages */}
           {convert && <p style={{ marginTop: "10px", color: "green" }}>{convert}</p>}
           {download && <p style={{ fontSize: "14px", color: "#ccc" }}>{download}</p>}
         </div>
