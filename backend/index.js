@@ -1,84 +1,83 @@
-const express = require('express');
-const multer = require('multer');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
-const docxToPdf = require('docx-pdf');
-const PDFDocument = require('pdfkit');
+const express = require("express");
+const multer = require("multer");
+const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
+const dotenv = require("dotenv");
+const CloudConvert = require("cloudconvert");
 
+dotenv.config();
+
+const cloudConvert = new CloudConvert(process.env.CLOUDCONVERT_API_KEY);
 const app = express();
 const port = process.env.PORT || 3000;
-
-// 🔧 Ensure folders exist (for Render)
-const ensureFolders = () => {
-  const uploadPath = path.join(__dirname, 'uploads');
-  const filesPath = path.join(__dirname, 'files');
-
-  if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
-  if (!fs.existsSync(filesPath)) fs.mkdirSync(filesPath);
-};
-ensureFolders();
 
 app.use(cors());
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads'),
-  filename: (req, file, cb) => cb(null, file.originalname)
+  destination: (req, file, cb) => cb(null, "uploads"),
+  filename: (req, file, cb) => cb(null, file.originalname),
 });
 
 const upload = multer({ storage });
 
-app.post('/convertFile', upload.single('file'), async (req, res) => {
+app.post("/convertFile", upload.single("file"), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).send('No file uploaded.');
+    if (!req.file) return res.status(400).send("No file uploaded.");
 
+    const inputFilePath = path.resolve(req.file.path);
     const ext = path.extname(req.file.originalname).toLowerCase();
-    const outputName = path.basename(req.file.originalname, ext) + '.pdf';
-    const outputPath = path.join(__dirname, 'files', outputName);
+    const outputName = path.basename(req.file.originalname, ext) + ".pdf";
 
-    // DOCX to PDF
-    if (ext === '.docx') {
-      docxToPdf(req.file.path, outputPath, err => {
-        if (err) return res.status(500).send('DOCX conversion failed.');
-        return res.download(outputPath);
-      });
+    const job = await cloudConvert.jobs.create({
+      tasks: {
+        import_my_file: {
+          operation: "import/upload",
+        },
+        convert_my_file: {
+          operation: "convert",
+          input: "import_my_file",
+          output_format: "pdf",
+        },
+        export_my_file: {
+          operation: "export/url",
+          input: "convert_my_file",
+        },
+      },
+    });
 
-    // Image to PDF
-    } else if (ext === '.jpg' || ext === '.jpeg' || ext === '.png') {
-      const doc = new PDFDocument();
-      const stream = fs.createWriteStream(outputPath);
-      doc.pipe(stream);
+    const uploadTask = job.tasks.filter(
+      (task) => task.name === "import_my_file"
+    )[0];
 
-      doc.image(req.file.path, {
-        fit: [500, 700],
-        align: 'center',
-        valign: 'center'
-      });
+    await cloudConvert.tasks.upload(uploadTask, fs.createReadStream(inputFilePath));
 
-      doc.end();
+    const completedJob = await cloudConvert.jobs.wait(job.id);
 
-      stream.on('finish', () => {
-        return res.download(outputPath);
-      });
+    const exportTask = completedJob.tasks.filter(
+      (task) => task.operation === "export/url"
+    )[0];
 
-      stream.on('error', (err) => {
-        console.error('PDFKit Stream Error:', err);
-        return res.status(500).send('PDF conversion failed.');
-      });
+    const fileUrl = exportTask.result.files[0].url;
 
-    } else {
-      return res.status(400).send('Unsupported file type. Only .docx, .jpeg, .png allowed.');
-    }
+    // Stream download
+    const response = await fetch(fileUrl);
+    const buffer = await response.arrayBuffer();
 
-  } catch (err) {
-    console.error(err);
-    return res.status(500).send('Internal Server Error.');
+    res.set({
+      "Content-Disposition": `attachment; filename="${outputName}"`,
+      "Content-Type": "application/pdf",
+    });
+
+    res.send(Buffer.from(buffer));
+  } catch (error) {
+    console.error("Conversion failed:", error);
+    res.status(500).send("Conversion failed.");
   }
 });
 
-// ✅ Root route for Render
-app.get('/', (req, res) => {
-  res.send('✅ PDF Converter Backend is Running!');
+app.get("/", (req, res) => {
+  res.send(" CloudConvert PDF Converter Backend is Running!");
 });
 
 app.listen(port, () => {
