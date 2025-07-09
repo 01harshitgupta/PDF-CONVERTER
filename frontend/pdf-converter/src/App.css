@@ -1,0 +1,228 @@
+/* Reset & Global */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  background-size: 400% 400%;
+  animation: backgroundGradient 15s ease infinite;
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+  perspective: 1000px;
+  overflow-x: hidden;
+}
+
+@keyframes backgroundGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+:root {
+  --bg-color: #0f0c29;
+  --text-color: #ffffff;
+  --box-bg: rgba(255, 255, 255, 0.05);
+  --primary: #00c851;
+  --primary-hover: #007e33;
+  --secondary: #00c6ff;
+  --secondary-alt: #0072ff;
+  --muted: #ccc;
+}
+
+[data-theme="light"] {
+  --bg-color: #f0f0f0;
+  --text-color: #111;
+  --box-bg: rgba(0, 0, 0, 0.05);
+  --muted: #333;
+}
+
+/* Navbar */
+.navbar1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: transparent;
+}
+
+.navbar1 h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  cursor: pointer;
+  transform: translateZ(30px);
+}
+
+.toggle-theme-btn {
+  padding: 8px 14px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s, transform 0.3s;
+  transform-style: preserve-3d;
+}
+
+.toggle-theme-btn:hover {
+  background-color: var(--primary-hover);
+  transform: scale(1.05) rotateX(5deg);
+}
+
+/* Main Section */
+.main-home {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding-top: 100px;
+  perspective: 1200px;
+}
+
+.center-home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  width: 100%;
+  padding: 0 20px;
+  transform: rotateX(5deg);
+}
+
+.heading-home h1 {
+  font-size: 3rem;
+  background: linear-gradient(90deg, var(--secondary), var(--secondary-alt));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  animation: floatText 4s ease-in-out infinite;
+}
+
+@keyframes floatText {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.heading-home p {
+  color: var(--muted);
+  font-size: 1.1rem;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.form-home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--box-bg);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+  width: 100%;
+  max-width: 500px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 20px;
+  transform-style: preserve-3d;
+  animation: floatCard 6s ease-in-out infinite;
+}
+
+@keyframes floatCard {
+  0%, 100% { transform: rotateX(0deg); }
+  50% { transform: rotateX(3deg); }
+}
+
+.home-label,
+.home-button {
+  width: 100%;
+  padding: 12px 20px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.home-label {
+  background: linear-gradient(to right, var(--secondary), var(--secondary-alt));
+  color: white;
+}
+
+.home-label:hover {
+  transform: scale(1.03) rotateY(3deg);
+}
+
+.home-button {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+}
+
+.home-button:hover {
+  background-color: var(--primary-hover);
+  transform: scale(1.03) rotateY(-3deg);
+}
+
+.home-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.spinner {
+  margin-top: 15px;
+  width: 36px;
+  height: 36px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top: 4px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Footer */
+.copyright {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: var(--muted);
+  text-align: center;
+  padding: 12px;
+  font-size: 0.9rem;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  .heading-home h1 {
+    font-size: 2rem;
+  }
+  .heading-home p {
+    font-size: 0.95rem;
+  }
+  .form-home {
+    padding: 20px;
+  }
+  .home-label, .home-button {
+    padding: 10px;
+  }
+}
