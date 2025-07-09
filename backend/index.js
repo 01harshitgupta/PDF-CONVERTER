@@ -4,11 +4,20 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const docxToPdf = require('docx-pdf');
-const PDFDocument = require('pdfkit'); // ✅ use pdfkit
+const PDFDocument = require('pdfkit');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+// 🔧 Ensure folders exist (for Render)
+const ensureFolders = () => {
+  const uploadPath = path.join(__dirname, 'uploads');
+  const filesPath = path.join(__dirname, 'files');
+
+  if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
+  if (!fs.existsSync(filesPath)) fs.mkdirSync(filesPath);
+};
+ensureFolders();
 
 app.use(cors());
 
@@ -65,6 +74,11 @@ app.post('/convertFile', upload.single('file'), async (req, res) => {
     console.error(err);
     return res.status(500).send('Internal Server Error.');
   }
+});
+
+// ✅ Root route for Render
+app.get('/', (req, res) => {
+  res.send('✅ PDF Converter Backend is Running!');
 });
 
 app.listen(port, () => {
