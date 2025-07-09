@@ -45,11 +45,11 @@ const Home = () => {
 
       fileInputRef.current.value = null;
       setSelectedFile(null);
-      setConvert("✅ File converted successfully!");
-      setDownload(`📥 Download started: ${downloadName}`);
+      setConvert(" File converted successfully!");
+      setDownload(` Download started: ${downloadName}`);
     } catch (error) {
       console.error("Error converting file:", error);
-      setConvert("❌ Something went wrong during conversion.");
+      setConvert(" Something went wrong during conversion.");
       setDownload("");
     } finally {
       setLoading(false);

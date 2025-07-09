@@ -1,8 +1,6 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
-const path = require("path");
-const fs = require("fs");
 const dotenv = require("dotenv");
 const CloudConvert = require("cloudconvert");
 
@@ -14,53 +12,51 @@ const port = process.env.PORT || 3000;
 
 app.use(cors());
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads"),
-  filename: (req, file, cb) => cb(null, file.originalname),
-});
-
+// Use memory storage (no disk)
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 app.post("/convertFile", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).send("No file uploaded.");
 
-    const inputFilePath = path.resolve(req.file.path);
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const outputName = path.basename(req.file.originalname, ext) + ".pdf";
+    const originalName = req.file.originalname;
+    const extension = originalName.split(".").pop();
+    const outputName = originalName.replace(/\.[^/.]+$/, ".pdf");
 
+    console.log("Step 1: Creating CloudConvert job...");
     const job = await cloudConvert.jobs.create({
       tasks: {
-        import_my_file: {
+        import_file: {
           operation: "import/upload",
         },
-        convert_my_file: {
+        convert_file: {
           operation: "convert",
-          input: "import_my_file",
+          input: "import_file",
           output_format: "pdf",
         },
-        export_my_file: {
+        export_file: {
           operation: "export/url",
-          input: "convert_my_file",
+          input: "convert_file",
         },
       },
     });
 
-    const uploadTask = job.tasks.filter(
-      (task) => task.name === "import_my_file"
-    )[0];
+    const uploadTask = job.tasks.find((task) => task.name === "import_file");
 
-    await cloudConvert.tasks.upload(uploadTask, fs.createReadStream(inputFilePath));
+    console.log("Step 2: Uploading file to CloudConvert...");
+    await cloudConvert.tasks.upload(uploadTask, req.file.buffer, originalName);
 
+    console.log("Step 3: Waiting for conversion to complete...");
     const completedJob = await cloudConvert.jobs.wait(job.id);
 
-    const exportTask = completedJob.tasks.filter(
+    const exportTask = completedJob.tasks.find(
       (task) => task.operation === "export/url"
-    )[0];
-
+    );
     const fileUrl = exportTask.result.files[0].url;
 
-    // Stream download
+    console.log("Step 4: Downloading converted file from CloudConvert...");
+    const fetch = (await import("node-fetch")).default;
     const response = await fetch(fileUrl);
     const buffer = await response.arrayBuffer();
 
@@ -70,8 +66,10 @@ app.post("/convertFile", upload.single("file"), async (req, res) => {
     });
 
     res.send(Buffer.from(buffer));
+    console.log(" Conversion and download complete.");
+
   } catch (error) {
-    console.error("Conversion failed:", error);
+    console.error(" Conversion failed:", error.message);
     res.status(500).send("Conversion failed.");
   }
 });
